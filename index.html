@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -440,7 +439,6 @@
 
     const weekdayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-    let localRaw = localStorage.getItem('monthlyCareAppDb');
     let appDb = {
         library: [
             { name: 'عناية بالبشرة 🧴', color: '#F9E4E6' },
@@ -451,16 +449,17 @@
         events: {}
     };
 
+    // قراءة البيانات بنظام حماية آمن يمنع مسح الـ LocalStorage
+    let localRaw = localStorage.getItem('monthlyCareAppDb');
     if (localRaw) {
         try {
             let parsed = JSON.parse(localRaw);
-            if (parsed && parsed.library && parsed.library.length > 0 && typeof parsed.library[0] === 'object' && parsed.library[0].name) {
-                appDb = parsed;
-            } else {
-                localStorage.removeItem('monthlyCareAppDb');
+            if (parsed && typeof parsed === 'object') {
+                if (Array.isArray(parsed.library)) appDb.library = parsed.library;
+                if (parsed.events && typeof parsed.events === 'object') appDb.events = parsed.events;
             }
         } catch(e) {
-            localStorage.removeItem('monthlyCareAppDb');
+            console.error("خطأ قراءة البيانات", e);
         }
     }
 
@@ -524,7 +523,6 @@
         document.getElementById('libFormLabel').innerText = 'تعديل المهمة المحددة:';
     }
 
-    // إزالة دالة الـ confirm لمنع مشاكل التعليق على متصفحات وتطبيقات الـ iOS
     function deleteFromLibrary(idx) {
         appDb.library.splice(idx, 1);
         if(editingLibraryIndex === idx) {
@@ -607,7 +605,7 @@
         const libIdx = document.getElementById('librarySelect').value;
         const time = document.getElementById('newTaskTime').value;
 
-        if(!libIdx || libIdx === "") return alert('الرجاء اختيار مهمة من المكتبة');
+        if(libIdx === "" || libIdx === null) return alert('الرجاء اختيار مهمة من المكتبة');
         if(!time) return alert('الرجاء تحديد وقت للمهمة ⏰');
 
         const selectedLibItem = appDb.library[libIdx];
@@ -641,7 +639,6 @@
         }
     }
 
-    // إزالة دالة الـ confirm من الحذف اليومي أيضاً لتعمل اللمسة مباشرة على الآيفون والآيباد
     function deleteTaskFromDay(taskId) {
         const dateKey = `${currentYear}-${currentMonth}-${selectedDayGlobal}`;
         appDb.events[dateKey] = appDb.events[dateKey].filter(t => t.id !== taskId);
